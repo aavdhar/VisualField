@@ -48,16 +48,17 @@ int main( int argc, const char** argv ) {
   cv::moveWindow(main_window_name, 400, 100);
   cv::namedWindow(face_window_name,CV_WINDOW_NORMAL);
   cv::moveWindow(face_window_name, 10, 100);
-  cv::namedWindow("Right Eye",CV_WINDOW_NORMAL);
-  cv::moveWindow("Right Eye", 10, 600);
-  cv::namedWindow("Left Eye",CV_WINDOW_NORMAL);
-  cv::moveWindow("Left Eye", 10, 800);
+
+//CHANGED  cv::namedWindow("Right Eye",CV_WINDOW_NORMAL);
+//CHANGED  cv::moveWindow("Right Eye", 10, 600);
+//CHANGED  cv::namedWindow("Left Eye",CV_WINDOW_NORMAL);
+//CHANGED  cv::moveWindow("Left Eye", 10, 800);
 
   /* As the matrix dichotomy will not be applied, these windows are useless.
-  cv::namedWindow("aa",CV_WINDOW_NORMAL);
-  cv::moveWindow("aa", 10, 800);
-  cv::namedWindow("aaa",CV_WINDOW_NORMAL);
-  cv::moveWindow("aaa", 10, 800);*/
+//CHANGED  cv::namedWindow("aa",CV_WINDOW_NORMAL);
+//CHANGED  cv::moveWindow("aa", 10, 800);
+//CHANGED  cv::namedWindow("aaa",CV_WINDOW_NORMAL);
+//CHANGED  cv::moveWindow("aaa", 10, 800);*/
 
   createCornerKernels();
   ellipse(skinCrCbHist, cv::Point(113, 155), cv::Size(23, 15),
@@ -84,11 +85,10 @@ int main( int argc, const char** argv ) {
         detectAndDisplay( frame );
       }
       else {
-        printf(" --(!) No captured frame -- Break!");
         break;
       }
 
-      imshow(main_window_name,debugImage);
+ //CHANGED--    imshow(main_window_name,debugImage);
 
       int c = cv::waitKey(10);
       if( (char)c == 'c' ) { break; }
@@ -134,6 +134,7 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   leftLeftCornerRegion.width = leftPupil.x;
   leftLeftCornerRegion.height /= 2;
   leftLeftCornerRegion.y += leftLeftCornerRegion.height / 2;
+
   cv::Rect rightLeftCornerRegion(rightEyeRegion);
   rightLeftCornerRegion.width = rightPupil.x;
   rightLeftCornerRegion.height /= 2;
@@ -143,8 +144,10 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   rightRightCornerRegion.x += rightPupil.x;
   rightRightCornerRegion.height /= 2;
   rightRightCornerRegion.y += rightRightCornerRegion.height / 2;
-  rectangle(debugFace,leftRightCornerRegion,200);
-  rectangle(debugFace,leftLeftCornerRegion,200);
+
+  //CHANGED - don't want left Eye -- rectangle(debugFace,leftRightCornerRegion,200);
+  //CHANGED - don't want left Eye -- rectangle(debugFace,leftLeftCornerRegion,200);
+
   rectangle(debugFace,rightLeftCornerRegion,200);
   rectangle(debugFace,rightRightCornerRegion,200);
   // change eye centers to face coordinates
@@ -154,7 +157,7 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   leftPupil.y += leftEyeRegion.y;
   // draw eye centers
   circle(debugFace, rightPupil, 3, 1234);
-  circle(debugFace, leftPupil, 3, 1234);
+  //CHANGED - don't want leftPupil for now -- circle(debugFace, leftPupil, 3, 1234);
 
   //-- Find Eye Corners
   if (kEnableEyeCorner) {
