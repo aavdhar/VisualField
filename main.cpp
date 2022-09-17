@@ -2,10 +2,12 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <thread>
 #include <iostream>
 #include <queue>
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 
 #include "constants.h"
 #include "findEyeCenter.h"
@@ -18,6 +20,8 @@
 #define CV_HAAR_SCALE_IMAGE             cv::CASCADE_SCALE_IMAGE
 #define CV_HAAR_FIND_BIGGEST_OBJECT     cv::CASCADE_FIND_BIGGEST_OBJECT
 #endif
+
+using namespace std;
 
 
 /** Constants **/
@@ -39,20 +43,46 @@ cv::Mat skinCrCbHist = cv::Mat::zeros(cv::Size(256, 256), CV_8UC1);
 /**
  * @function main
  */
-int main( int argc, const char** argv ) {
-  cv::Mat frame;
+
+void dotMover(std::string msg);
+void pupilTracker(std::string msg);
+
+
+int 
+main( int argc, const char** argv ) 
+{
+    std::thread t1(pupilTracker, "Hello Pupil Tracker");
+
+    t1.detach();
+
+    dotMover("Hello Dot Mover");
+
+    return 0;
+}
+
+void 
+pupilTracker(std::string msg) 
+{
+
+    cv::Mat frame;
 
   // Load the cascades
-  if( !face_cascade.load( face_cascade_name ) ){ printf("--(!)Error loading face cascade, please change face_cascade_name in source code.\n"); return -1; };
-  cv::namedWindow(main_window_name,CV_WINDOW_NORMAL);
-  cv::moveWindow(main_window_name, 400, 100);
-  cv::namedWindow(face_window_name,CV_WINDOW_NORMAL);
-  cv::moveWindow(face_window_name, 10, 100);
+    if(!face_cascade.load( face_cascade_name ))
+    { 
+        std::cout << "--(!)Error loading face cascade, please change face_cascade_name in source code." << endl;
+        return; 
+    }
 
-//CHANGED  cv::namedWindow("Right Eye",CV_WINDOW_NORMAL);
-//CHANGED  cv::moveWindow("Right Eye", 10, 600);
-//CHANGED  cv::namedWindow("Left Eye",CV_WINDOW_NORMAL);
-//CHANGED  cv::moveWindow("Left Eye", 10, 800);
+//CHANGED     cv::namedWindow(main_window_name,CV_WINDOW_NORMAL);
+//CHANGED    cv::moveWindow(main_window_name, 400, 100);
+//CHANGED    cv::namedWindow(face_window_name,CV_WINDOW_NORMAL);
+//CHANGED    cv::moveWindow(face_window_name, 10, 100);
+
+//CHANGED cv::namedWindow("Right Eye",CV_WINDOW_NORMAL);
+
+//CHANGED cv::moveWindow("Right Eye", 10, 600);
+//CHANGED cv::namedWindow("Left Eye",CV_WINDOW_NORMAL);
+//CHANGED cv::moveWindow("Left Eye", 10, 800);
 
   /* As the matrix dichotomy will not be applied, these windows are useless.
 //CHANGED  cv::namedWindow("aa",CV_WINDOW_NORMAL);
@@ -60,49 +90,66 @@ int main( int argc, const char** argv ) {
 //CHANGED  cv::namedWindow("aaa",CV_WINDOW_NORMAL);
 //CHANGED  cv::moveWindow("aaa", 10, 800);*/
 
-  createCornerKernels();
-  ellipse(skinCrCbHist, cv::Point(113, 155), cv::Size(23, 15),
+    createCornerKernels();
+    ellipse(skinCrCbHist, cv::Point(113, 155), cv::Size(23, 15),
           43.0, 0.0, 360.0, cv::Scalar(255, 255, 255), -1);
+
+//Drawing goes here
 
   // I make an attempt at supporting both 2.x and 3.x OpenCV
 #if CV_MAJOR_VERSION < 3
-  CvCapture* capture = cvCaptureFromCAM( 0 );
-  if( capture ) {
-    while( true ) {
-      frame = cvQueryFrame( capture );
+    CvCapture* capture = cvCaptureFromCAM( 0 );
+    if(capture) 
+    {
+        while(true) 
+        {
+            frame = cvQueryFrame(capture);
 #else
-  cv::VideoCapture capture(0);
-  if( capture.isOpened() ) {
-    while( true ) {
-      capture.read(frame);
+    cv::VideoCapture capture(0);
+    if(capture.isOpened()) 
+    {
+        while(true) 
+        {
+            capture.read(frame);
 #endif
-      // mirror it
-      cv::flip(frame, frame, 1);
-      frame.copyTo(debugImage);
 
-      // Apply the classifier to the frame
-      if( !frame.empty() ) {
-        detectAndDisplay( frame );
-      }
-      else {
-        break;
-      }
+            // mirror it
+            cv::flip(frame, frame, 1);
+            frame.copyTo(debugImage);
 
- //CHANGED--    imshow(main_window_name,debugImage);
+            // Apply the classifier to the frame
+            if(!frame.empty()) 
+            {
+                detectAndDisplay( frame );
+            }
+            else 
+            {
+                break;
+            }
+//CHANGED BACK
+//CHANGED   imshow(main_window_name,debugImage);
+//CHANGED BACK
 
-      int c = cv::waitKey(10);
-      if( (char)c == 'c' ) { break; }
-      if( (char)c == 'f' ) {
-        imwrite("frame.png",frame);
-      }
+//CHANGED
+            sleep(2);
+//CHANGED
+            std::cout << "Pupil Tracker thread sleeps" << endl;
 
+//CHANGED   int c = cv::waitKey(10);
+//CHANGED   if( (char)c == 'c' ) 
+//CHANGED   { 
+//CHANGED       break;
+//CHANGED   }
+//CHANGED   if( (char)c == 'f' ) 
+//CHANGED   {
+//CHANGED       imwrite("frame.png",frame);
+//CHANGED   }
+        }
     }
-  }
-
-  releaseCornerKernels();
-
-  return 0;
+    releaseCornerKernels();
+    return;
 }
+
 
 void findEyes(cv::Mat frame_gray, cv::Rect face) {
   cv::Mat faceROI = frame_gray(face);
@@ -179,10 +226,11 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
     circle(faceROI, rightRightCorner, 3, 200);
   }
 
-  imshow(face_window_name, faceROI);
+//CHANGED -- imshow(face_window_name, faceROI);
+
 //  cv::Rect roi( cv::Point( 0, 0 ), faceROI.size());
-//  cv::Mat destinationROI = debugImage( roi );
-//  faceROI.copyTo( destinationROI );
+// cv::Mat destinationROI = debugImage( roi );
+// faceROI.copyTo( destinationROI );
 }
 
 
@@ -234,3 +282,59 @@ void detectAndDisplay( cv::Mat frame ) {
     findEyes(frame_gray, faces[0]);
   }
 }
+
+void 
+myCircle(cv::Mat img, cv::Point center, int size, int B, int G, int R){
+	cv::circle( img, center, size, cv::Scalar( B, G, R),cv::FILLED, cv::LINE_8 );
+}
+
+void 
+dotMover(std::string msg)
+{
+    cout << "Dot Mover Thread -- Begin" << msg << endl; 
+    int x[40];
+    int y[40];
+    for (int i=0; i<40; i++){
+	x[i] = rand()%(500-0 + 1) + 0;
+    	y[i] = rand()%(500-0 + 1) + 0;
+    }    
+    // Create a blank image of size
+    // (500 x 500) with black
+    // background (B, G, R) : (0, 0, 0)
+    cv::Mat image(500, 500, CV_8UC3,
+              cv::Scalar(255, 255, 255));
+  
+    // Check if the image is created
+    // successfully
+    if (!image.data) {
+//        std::cout << "Could not open or find"
+//             << " the image";
+  
+        return;
+    }
+    int size = sizeof(x)/sizeof(x[0]);
+
+    myCircle(image,cv::Point( 250, 250 ), 10, 0, 0, 255);
+    imshow("window", image);
+    cv::waitKey(1000);
+
+    std::cout << "Value of size ..." << size << endl;
+    for (int i=0; i < size; i++)
+    {
+        myCircle(image,cv::Point(x[i],y[i]), 10, 170, 169, 173);
+    	imshow("window", image);
+        int c = cv::waitKey(5000);
+        if (c == -1)
+        {
+            std::cout << "No Input..." << endl;
+        }
+        else
+        {
+            std::cout << "Input received - Key ..." << c << endl;
+        }
+    	myCircle(image,cv::Point(x[i], y[i]), 10, 255, 255 ,255);
+    }
+    cout << "Dot Mover Thread -- End" << msg << endl; 
+    return;
+}
+
