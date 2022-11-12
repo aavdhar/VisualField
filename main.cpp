@@ -4,6 +4,7 @@
 
 #include <thread>
 #include <iostream>
+#include <chrono>
 #include <queue>
 #include <stdio.h>
 #include <math.h>
@@ -52,11 +53,15 @@ void pupilTracker(std::string msg);
 int 
 main( int argc, const char** argv ) 
 {
+#ifdef NOTHREADING
+    pupilTracker("Hello Pupil Tracker");
+#else
     std::thread t1(pupilTracker, "Hello Pupil Tracker");
 
     t1.detach();
 
     dotMover("Hello Dot Mover");
+#endif
 
     return 0;
 }
@@ -76,12 +81,12 @@ pupilTracker(std::string msg)
 
 //CHANGED     cv::namedWindow(main_window_name,CV_WINDOW_NORMAL);
 //CHANGED    cv::moveWindow(main_window_name, 400, 100);
-//CHANGED    cv::namedWindow(face_window_name,CV_WINDOW_NORMAL);
-//CHANGED    cv::moveWindow(face_window_name, 10, 100);
+   cv::namedWindow(face_window_name,CV_WINDOW_NORMAL);
+   cv::moveWindow(face_window_name, 10, 100);
 
-//CHANGED cv::namedWindow("Right Eye",CV_WINDOW_NORMAL);
+cv::namedWindow("Right Eye",CV_WINDOW_NORMAL);
 
-//CHANGED cv::moveWindow("Right Eye", 10, 600);
+cv::moveWindow("Right Eye", 10, 600);
 //CHANGED cv::namedWindow("Left Eye",CV_WINDOW_NORMAL);
 //CHANGED cv::moveWindow("Left Eye", 10, 800);
 
@@ -127,24 +132,20 @@ pupilTracker(std::string msg)
             {
                 break;
             }
-//CHANGED BACK
-//CHANGED   imshow(main_window_name,debugImage);
-//CHANGED BACK
+            imshow(main_window_name,debugImage);
 
-//CHANGED
             sleep(2);
-//CHANGED
-            std::cout << "Pupil Tracker thread sleeps" << endl;
+//          std::cout << "Pupil Tracker thread sleeps" << endl;
 
-//CHANGED   int c = cv::waitKey(10);
-//CHANGED   if( (char)c == 'c' ) 
-//CHANGED   { 
-//CHANGED       break;
-//CHANGED   }
-//CHANGED   if( (char)c == 'f' ) 
-//CHANGED   {
-//CHANGED       imwrite("frame.png",frame);
-//CHANGED   }
+            int c = cv::waitKey(10);
+            if ((char)c == 'c') 
+            { 
+                break;
+            }
+            if ((char)c == 'f') 
+            {
+                imwrite("frame.png",frame);
+            }
         }
     }
     releaseCornerKernels();
@@ -152,27 +153,34 @@ pupilTracker(std::string msg)
 }
 
 
-void findEyes(cv::Mat frame_gray, cv::Rect face) {
-  cv::Mat faceROI = frame_gray(face);
-  cv::Mat debugFace = faceROI;
+void 
+findEyes(cv::Mat frame_gray, cv::Rect face) 
+{
+    cv::Mat faceROI = frame_gray(face);
+    cv::Mat debugFace = faceROI;
 
-  if (kSmoothFaceImage) {
-    double sigma = kSmoothFaceFactor * face.width;
-    GaussianBlur( faceROI, faceROI, cv::Size( 0, 0 ), sigma);
-  }
+    if (kSmoothFaceImage) 
+    {
+        double sigma = kSmoothFaceFactor * face.width;
+        GaussianBlur( faceROI, faceROI, cv::Size( 0, 0 ), sigma);
+    }
+
   //-- Find eye regions and draw them
-  int eye_region_width = face.width * (kEyePercentWidth/100.0);
-  int eye_region_height = face.width * (kEyePercentHeight/100.0);
-  int eye_region_top = face.height * (kEyePercentTop/100.0);
+    int eye_region_width = face.width * (kEyePercentWidth/100.0);
+    int eye_region_height = face.width * (kEyePercentHeight/100.0);
+    int eye_region_top = face.height * (kEyePercentTop/100.0);
+
 //  cv::Rect leftEyeRegion(face.width*(kEyePercentSide/100.0),
 //                         eye_region_top,eye_region_width,eye_region_height);
-  cv::Rect rightEyeRegion(face.width - eye_region_width - face.width*(kEyePercentSide/100.0),
+
+    cv::Rect rightEyeRegion(face.width - eye_region_width - face.width*(kEyePercentSide/100.0),
                           eye_region_top,eye_region_width,eye_region_height);
 
-  //-- Find Eye Centers
+//-- Find Eye Centers
 //  cv::Point leftPupil = findEyeCenter(faceROI,leftEyeRegion,"Left Eye");
-  cv::Point rightPupil = findEyeCenter(faceROI,rightEyeRegion,"Right Eye");
-  // get corner regions
+    cv::Point rightPupil = findEyeCenter(faceROI,rightEyeRegion,"Right Eye");
+
+// get corner regions
 //  cv::Rect leftRightCornerRegion(leftEyeRegion);
 //  leftRightCornerRegion.width -= leftPupil.x;
 //  leftRightCornerRegion.x += leftPupil.x;
@@ -183,49 +191,58 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
 //  leftLeftCornerRegion.height /= 2;
 //  leftLeftCornerRegion.y += leftLeftCornerRegion.height / 2;
 
-  cv::Rect rightLeftCornerRegion(rightEyeRegion);
-  rightLeftCornerRegion.width = rightPupil.x;
-  rightLeftCornerRegion.height /= 2;
-  rightLeftCornerRegion.y += rightLeftCornerRegion.height / 2;
-  cv::Rect rightRightCornerRegion(rightEyeRegion);
-  rightRightCornerRegion.width -= rightPupil.x;
-  rightRightCornerRegion.x += rightPupil.x;
-  rightRightCornerRegion.height /= 2;
-  rightRightCornerRegion.y += rightRightCornerRegion.height / 2;
+    cv::Rect rightLeftCornerRegion(rightEyeRegion);
+    rightLeftCornerRegion.width = rightPupil.x;
+    rightLeftCornerRegion.height /= 2;
+    rightLeftCornerRegion.y += rightLeftCornerRegion.height / 2;
+    cv::Rect rightRightCornerRegion(rightEyeRegion);
+    rightRightCornerRegion.width -= rightPupil.x;
+    rightRightCornerRegion.x += rightPupil.x;
+    rightRightCornerRegion.height /= 2;
+    rightRightCornerRegion.y += rightRightCornerRegion.height / 2;
 
   //CHANGED - don't want left Eye -- rectangle(debugFace,leftRightCornerRegion,200);
   //CHANGED - don't want left Eye -- rectangle(debugFace,leftLeftCornerRegion,200);
 
-  rectangle(debugFace,rightLeftCornerRegion,200);
-  rectangle(debugFace,rightRightCornerRegion,200);
+    rectangle(debugFace,rightLeftCornerRegion,200);
+    rectangle(debugFace,rightRightCornerRegion,200);
+
   // change eye centers to face coordinates
-  rightPupil.x += rightEyeRegion.x;
-  rightPupil.y += rightEyeRegion.y;
+    rightPupil.x += rightEyeRegion.x;
+    rightPupil.y += rightEyeRegion.y;
+
 //  leftPupil.x += leftEyeRegion.x;
 //  leftPupil.y += leftEyeRegion.y;
+
   // draw eye centers
-  circle(debugFace, rightPupil, 3, 1234);
+    circle(debugFace, rightPupil, 3, 1234);
+
   //CHANGED - don't want leftPupil for now -- circle(debugFace, leftPupil, 3, 1234);
-  cout << rightPupil.x << ", " << rightPupil.y << endl;
+    cout << "RIGHT PUPIL: " << rightPupil.x << ", " << rightPupil.y << endl;
+
   //-- Find Eye Corners
-  if (kEnableEyeCorner) {
+    if (kEnableEyeCorner) 
+    {
 //    cv::Point2f leftRightCorner = findEyeCorner(faceROI(leftRightCornerRegion), true, false);
 //    leftRightCorner.x += leftRightCornerRegion.x;
 //    leftRightCorner.y += leftRightCornerRegion.y;
 //    cv::Point2f leftLeftCorner = findEyeCorner(faceROI(leftLeftCornerRegion), true, true);
 //    leftLeftCorner.x += leftLeftCornerRegion.x;
 //    leftLeftCorner.y += leftLeftCornerRegion.y;
-    cv::Point2f rightLeftCorner = findEyeCorner(faceROI(rightLeftCornerRegion), false, true);
-    rightLeftCorner.x += rightLeftCornerRegion.x;
-    rightLeftCorner.y += rightLeftCornerRegion.y;
-    cv::Point2f rightRightCorner = findEyeCorner(faceROI(rightRightCornerRegion), false, false);
-    rightRightCorner.x += rightRightCornerRegion.x;
-    rightRightCorner.y += rightRightCornerRegion.y;
+
+      cv::Point2f rightLeftCorner = findEyeCorner(faceROI(rightLeftCornerRegion), false, true);
+      rightLeftCorner.x += rightLeftCornerRegion.x;
+      rightLeftCorner.y += rightLeftCornerRegion.y;
+      cv::Point2f rightRightCorner = findEyeCorner(faceROI(rightRightCornerRegion), false, false);
+      rightRightCorner.x += rightRightCornerRegion.x;
+      rightRightCorner.y += rightRightCornerRegion.y;
+
 //    circle(faceROI, leftRightCorner, 3, 200);
 //    circle(faceROI, leftLeftCorner, 3, 200);
-    circle(faceROI, rightLeftCorner, 3, 200);
-    circle(faceROI, rightRightCorner, 3, 200);
-  }
+
+      circle(faceROI, rightLeftCorner, 3, 200);
+      circle(faceROI, rightRightCorner, 3, 200);
+    }
 
 //CHANGED -- imshow(face_window_name, faceROI);
 
@@ -259,29 +276,33 @@ cv::Mat findSkin (cv::Mat &frame) {
 /**
  * @function detectAndDisplay
  */
-void detectAndDisplay( cv::Mat frame ) {
-  std::vector<cv::Rect> faces;
-  //cv::Mat frame_gray;
+void 
+detectAndDisplay(cv::Mat frame) 
+{
 
-  std::vector<cv::Mat> rgbChannels(3);
-  cv::split(frame, rgbChannels);
-  cv::Mat frame_gray = rgbChannels[2];
+    std::vector<cv::Rect> faces;
+    //cv::Mat frame_gray;
 
-  //cvtColor( frame, frame_gray, CV_BGR2GRAY );
-  //equalizeHist( frame_gray, frame_gray );
-  //cv::pow(frame_gray, CV_64F, frame_gray);
-  //-- Detect faces
-  face_cascade.detectMultiScale( frame_gray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE|CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(150, 150) );
+    std::vector<cv::Mat> rgbChannels(3);
+    cv::split(frame, rgbChannels);
+    cv::Mat frame_gray = rgbChannels[2];
+
+    //cvtColor( frame, frame_gray, CV_BGR2GRAY );
+    //equalizeHist( frame_gray, frame_gray );
+    //cv::pow(frame_gray, CV_64F, frame_gray);
+    //-- Detect faces
+    face_cascade.detectMultiScale(frame_gray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE|CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(150, 150));
 //  findSkin(debugImage);
 
-  for( int i = 0; i < faces.size(); i++ )
-  {
-    rectangle(debugImage, faces[i], 1234);
-  }
-  //-- Show what you got
-  if (faces.size() > 0) {
-    findEyes(frame_gray, faces[0]);
-  }
+    for( int i = 0; i < faces.size(); i++ )
+    {
+        rectangle(debugImage, faces[i], 1234);
+    }
+    //-- Show what you got
+    if (faces.size() > 0) 
+    {
+        findEyes(frame_gray, faces[0]);
+    }
 }
 
 void 
@@ -320,25 +341,29 @@ dotMover(std::string msg)
     imshow("window", image);
     cv::waitKey(1000);
 
+
     std::cout << "Value of size ..." << size << endl;
     for (int i=0; i < size; i++)
     {
+        results[i] = false;
+        time_t lBeginTime = time(0);
+        time_t lNewTime  = time(0);
+        while (lNewTime < (lBeginTime + 5000))
+        {
+
+            int c = cv::pollKey();
+            if (c != -1)
+            {
+                results[i] = true;
+                std::cout << "Input received - Key ..." << c << endl;
+                break;
+            }
+	    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            lNewTime = time(0);
+        }
         myCircle(image,cv::Point(x[i],y[i]), 10, 170, 169, 173);
     	imshow("window", image);
-        int c = cv::waitKey(5000);
-        if (c == -1)
-        {
-	    results[i] = false;
-            std::cout << "No Input..." << endl;
-        }
-        else
-        {
-            results[i] = true;
-            std::cout << "Input received - Key ..." << c << endl;
-        }
-	cv::waitKey(100);
     	myCircle(image,cv::Point(x[i], y[i]), 10, 255, 255 ,255);
-	
     }
     cout << "Dot Mover Thread -- End" << msg << endl; 
     string name;
