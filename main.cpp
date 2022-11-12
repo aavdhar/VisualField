@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>
+#include <fstream>
 
 #include "constants.h"
 #include "findEyeCenter.h"
@@ -163,24 +164,24 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   int eye_region_width = face.width * (kEyePercentWidth/100.0);
   int eye_region_height = face.width * (kEyePercentHeight/100.0);
   int eye_region_top = face.height * (kEyePercentTop/100.0);
-  cv::Rect leftEyeRegion(face.width*(kEyePercentSide/100.0),
-                         eye_region_top,eye_region_width,eye_region_height);
+//  cv::Rect leftEyeRegion(face.width*(kEyePercentSide/100.0),
+//                         eye_region_top,eye_region_width,eye_region_height);
   cv::Rect rightEyeRegion(face.width - eye_region_width - face.width*(kEyePercentSide/100.0),
                           eye_region_top,eye_region_width,eye_region_height);
 
   //-- Find Eye Centers
-  cv::Point leftPupil = findEyeCenter(faceROI,leftEyeRegion,"Left Eye");
+//  cv::Point leftPupil = findEyeCenter(faceROI,leftEyeRegion,"Left Eye");
   cv::Point rightPupil = findEyeCenter(faceROI,rightEyeRegion,"Right Eye");
   // get corner regions
-  cv::Rect leftRightCornerRegion(leftEyeRegion);
-  leftRightCornerRegion.width -= leftPupil.x;
-  leftRightCornerRegion.x += leftPupil.x;
-  leftRightCornerRegion.height /= 2;
-  leftRightCornerRegion.y += leftRightCornerRegion.height / 2;
-  cv::Rect leftLeftCornerRegion(leftEyeRegion);
-  leftLeftCornerRegion.width = leftPupil.x;
-  leftLeftCornerRegion.height /= 2;
-  leftLeftCornerRegion.y += leftLeftCornerRegion.height / 2;
+//  cv::Rect leftRightCornerRegion(leftEyeRegion);
+//  leftRightCornerRegion.width -= leftPupil.x;
+//  leftRightCornerRegion.x += leftPupil.x;
+//  leftRightCornerRegion.height /= 2;
+//  leftRightCornerRegion.y += leftRightCornerRegion.height / 2;
+//  cv::Rect leftLeftCornerRegion(leftEyeRegion);
+//  leftLeftCornerRegion.width = leftPupil.x;
+//  leftLeftCornerRegion.height /= 2;
+//  leftLeftCornerRegion.y += leftLeftCornerRegion.height / 2;
 
   cv::Rect rightLeftCornerRegion(rightEyeRegion);
   rightLeftCornerRegion.width = rightPupil.x;
@@ -200,28 +201,28 @@ void findEyes(cv::Mat frame_gray, cv::Rect face) {
   // change eye centers to face coordinates
   rightPupil.x += rightEyeRegion.x;
   rightPupil.y += rightEyeRegion.y;
-  leftPupil.x += leftEyeRegion.x;
-  leftPupil.y += leftEyeRegion.y;
+//  leftPupil.x += leftEyeRegion.x;
+//  leftPupil.y += leftEyeRegion.y;
   // draw eye centers
   circle(debugFace, rightPupil, 3, 1234);
   //CHANGED - don't want leftPupil for now -- circle(debugFace, leftPupil, 3, 1234);
-
+  cout << rightPupil.x << ", " << rightPupil.y << endl;
   //-- Find Eye Corners
   if (kEnableEyeCorner) {
-    cv::Point2f leftRightCorner = findEyeCorner(faceROI(leftRightCornerRegion), true, false);
-    leftRightCorner.x += leftRightCornerRegion.x;
-    leftRightCorner.y += leftRightCornerRegion.y;
-    cv::Point2f leftLeftCorner = findEyeCorner(faceROI(leftLeftCornerRegion), true, true);
-    leftLeftCorner.x += leftLeftCornerRegion.x;
-    leftLeftCorner.y += leftLeftCornerRegion.y;
+//    cv::Point2f leftRightCorner = findEyeCorner(faceROI(leftRightCornerRegion), true, false);
+//    leftRightCorner.x += leftRightCornerRegion.x;
+//    leftRightCorner.y += leftRightCornerRegion.y;
+//    cv::Point2f leftLeftCorner = findEyeCorner(faceROI(leftLeftCornerRegion), true, true);
+//    leftLeftCorner.x += leftLeftCornerRegion.x;
+//    leftLeftCorner.y += leftLeftCornerRegion.y;
     cv::Point2f rightLeftCorner = findEyeCorner(faceROI(rightLeftCornerRegion), false, true);
     rightLeftCorner.x += rightLeftCornerRegion.x;
     rightLeftCorner.y += rightLeftCornerRegion.y;
     cv::Point2f rightRightCorner = findEyeCorner(faceROI(rightRightCornerRegion), false, false);
     rightRightCorner.x += rightRightCornerRegion.x;
     rightRightCorner.y += rightRightCornerRegion.y;
-    circle(faceROI, leftRightCorner, 3, 200);
-    circle(faceROI, leftLeftCorner, 3, 200);
+//    circle(faceROI, leftRightCorner, 3, 200);
+//    circle(faceROI, leftLeftCorner, 3, 200);
     circle(faceROI, rightLeftCorner, 3, 200);
     circle(faceROI, rightRightCorner, 3, 200);
   }
@@ -291,6 +292,7 @@ myCircle(cv::Mat img, cv::Point center, int size, int B, int G, int R){
 void 
 dotMover(std::string msg)
 {
+    bool results[40];
     cout << "Dot Mover Thread -- Begin" << msg << endl; 
     int x[40];
     int y[40];
@@ -326,15 +328,29 @@ dotMover(std::string msg)
         int c = cv::waitKey(5000);
         if (c == -1)
         {
+	    results[i] = false;
             std::cout << "No Input..." << endl;
         }
         else
         {
+            results[i] = true;
             std::cout << "Input received - Key ..." << c << endl;
         }
+	cv::waitKey(100);
     	myCircle(image,cv::Point(x[i], y[i]), 10, 255, 255 ,255);
+	
     }
     cout << "Dot Mover Thread -- End" << msg << endl; 
+    string name;
+    cout << "Enter Results Filename" << endl;
+    cin >> name;
+    fstream fout;
+    fout.open(name+ ".csv", ios::out | ios::app);
+    for (int i=0; i<size; i++){
+	fout << x[i] << "," << y[i] << "," << results[i] << "\n";
+    }
     return;
 }
+
+
 
