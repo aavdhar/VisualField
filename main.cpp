@@ -49,6 +49,23 @@ cv::Mat skinCrCbHist = cv::Mat::zeros(cv::Size(256, 256), CV_8UC1);
 void dotMover(std::string msg);
 void pupilTracker(std::string msg);
 
+bool 
+stdThreadSetPriority(int priority)
+{
+    struct sched_param thread_param; 
+    int    policy;
+
+    pthread_getschedparam(pthread_self(), &policy, &thread_param);
+
+std::cout << "Thread Handle: " << pthread_self() << ", Policy: " << policy << ", Priority: " << thread_param.sched_priority << endl;
+std::cout << endl;
+
+    thread_param.sched_priority = priority; 
+
+    pthread_setschedparam(pthread_self(), SCHED_RR, &thread_param);
+    return true;
+}
+
 
 int 
 main( int argc, const char** argv ) 
@@ -70,6 +87,8 @@ void
 pupilTracker(std::string msg) 
 {
 
+    stdThreadSetPriority(31);  // Setting highest priority in NORMAL scheduling
+
     cv::Mat frame;
 
   // Load the cascades
@@ -81,12 +100,12 @@ pupilTracker(std::string msg)
 
 //CHANGED     cv::namedWindow(main_window_name,CV_WINDOW_NORMAL);
 //CHANGED    cv::moveWindow(main_window_name, 400, 100);
-   cv::namedWindow(face_window_name,CV_WINDOW_NORMAL);
-   cv::moveWindow(face_window_name, 10, 100);
+//   cv::namedWindow(face_window_name,CV_WINDOW_NORMAL);
+ //  cv::moveWindow(face_window_name, 10, 100);
 
-cv::namedWindow("Right Eye",CV_WINDOW_NORMAL);
+// cv::namedWindow("Right Eye",CV_WINDOW_NORMAL);
 
-cv::moveWindow("Right Eye", 10, 600);
+// cv::moveWindow("Right Eye", 10, 600);
 //CHANGED cv::namedWindow("Left Eye",CV_WINDOW_NORMAL);
 //CHANGED cv::moveWindow("Left Eye", 10, 800);
 
@@ -103,21 +122,15 @@ cv::moveWindow("Right Eye", 10, 600);
 //Drawing goes here
 
   // I make an attempt at supporting both 2.x and 3.x OpenCV
-#if CV_MAJOR_VERSION < 3
-    CvCapture* capture = cvCaptureFromCAM( 0 );
-    if(capture) 
-    {
-        while(true) 
-        {
-            frame = cvQueryFrame(capture);
-#else
     cv::VideoCapture capture(0);
+  //  cout << capture.get(cv::CAP_PROP_BUFFERSIZE) << endl;
+
+    capture.set(cv::CAP_PROP_BUFFERSIZE, 1);
     if(capture.isOpened()) 
     {
         while(true) 
         {
             capture.read(frame);
-#endif
 
             // mirror it
             cv::flip(frame, frame, 1);
@@ -134,9 +147,10 @@ cv::moveWindow("Right Eye", 10, 600);
             }
             imshow(main_window_name,debugImage);
 
-            sleep(2);
+	    std::this_thread::sleep_for(std::chrono::seconds(2));
 //          std::cout << "Pupil Tracker thread sleeps" << endl;
 
+#ifdef DEBUG
             int c = cv::waitKey(10);
             if ((char)c == 'c') 
             { 
@@ -146,6 +160,7 @@ cv::moveWindow("Right Eye", 10, 600);
             {
                 imwrite("frame.png",frame);
             }
+#endif //DEBUG
         }
     }
     releaseCornerKernels();
@@ -313,6 +328,8 @@ myCircle(cv::Mat img, cv::Point center, int size, int B, int G, int R){
 void 
 dotMover(std::string msg)
 {
+    stdThreadSetPriority(20);
+
     bool results[40];
     cout << "Dot Mover Thread -- Begin" << msg << endl; 
     int x[40];
